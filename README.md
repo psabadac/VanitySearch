@@ -187,31 +187,40 @@ Build and enjoy.\
 \
 Note: The current relase has been compiled with CUDA SDK 10.0, if you have a different release of the CUDA SDK, you may need to update CUDA SDK paths in VanitySearch.vcxproj using a text editor. The current nvcc option are set up to architecture starting at 3.0 capability, for older hardware, add the desired compute capabilities to the list in GPUEngine.cu properties, CUDA C/C++, Device, Code Generation.
 
-## Linux
+## Building on Pop!_OS 22.04 LTS + nVIDIA GPU MX150
 
- - Intall CUDA SDK.
- - Install older g++ (just for the CUDA SDK). Depenging on the CUDA SDK version and on your Linux distribution you may need to install an older g++.
- - Install recent gcc. VanitySearch needs to be compiled and linked with a recent gcc (>=7). The current release has been compiled with gcc 7.3.0.
- - Edit the makefile and set up the appropriate CUDA SDK and compiler paths for nvcc. Or pass them as variables to `make` invocation.
+```bash
+# This script is intended for Debian based distros
+# To be run as root
 
-    ```make
-    CUDA       = /usr/local/cuda-8.0
-    CXXCUDA    = /usr/bin/g++-4.8
-    ```
+apt install -y nvidia-driver-530 nvidia-dkms-530 nvidia-utils-530 nvidia-cuda-toolkit
 
- - You can enter a list of architectrures (refer to nvcc documentation) if you have several GPU with different architecture.
+# Downloading cuda sdk
+wget https://developer.download.nvidia.com/compute/cuda/11.5.1/local_installers/cuda_11.5.1_495.29.05_linux.run
 
- - Set CCAP to the desired compute capability according to your hardware. See docker section for more. Compute capability 2.0 (Fermi) is deprecated for recent CUDA SDK.
+# Check and install only the cuda, without the drivers
+sh cuda_11.5.1_495.29.05_linux.run
 
- - Go to the VanitySearch directory.
- - To build CPU-only version (without CUDA support):
-    ```sh
-    $ make all
-    ```
- - To build with CUDA:
-    ```sh
-    $ make gpu=1 CCAP=2.0 all
-    ```
+# Linking the OpenCL library and libcudart necessary for make tool
+ln -s /usr/local/cuda-11.5/targets/x86_64-linux/lib/libOpenCL.so /usr/lib/libOpenCL.so
+
+# Clonning the repo
+git clone https://github.com/psabadac/VanitySearch.git
+cd VanitySearch
+
+# Replacing path to compiler and cuda library
+sed -i 's/cuda-8.0/cuda-11.5/g' Makefile
+sed -i 's/g++-4.8/g++/g' Makefile
+
+# Run this to determine ccap
+nvidia-smi --query-gpu=compute_cap --format=csv
+
+# Build for MX 150 (for this ccap was 6.1)
+make -B gpu=1 ccap=61 all
+
+#Run
+./VanitySearch -h
+```
 
 Runnig VanitySearch (Intel(R) Xeon(R) CPU, 8 cores,  @ 2.93GHz, Quadro 600 (x2))
 ```sh
